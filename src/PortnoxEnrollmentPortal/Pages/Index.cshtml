@@ -1,0 +1,29 @@
+@page
+@model PortnoxEnrollmentPortal.Pages.IndexModel
+@{
+    ViewData["Title"] = "Portnox Enrollment";
+}
+
+<h1>Portnox Enrollment</h1>
+
+@if (!string.IsNullOrWhiteSpace(Model.StatusMessage))
+{
+    <div style="padding:10px;border:1px solid #ccc;margin-bottom:10px;">
+        @Model.StatusMessage
+    </div>
+}
+
+<div style="padding:10px;border:1px solid #eee;margin-bottom:10px;">
+    <div><b>Signed in as:</b> @Model.DomainSam</div>
+    <div><b>Resolved UPN:</b> @Model.Upn</div>
+    <div><b>Display name:</b> @Model.DisplayName</div>
+</div>
+
+<form method="post" asp-page-handler="Enroll">
+    @Html.AntiForgeryToken()
+    <button type="submit" style="padding:10px 16px;">Enroll</button>
+</form>
+
+<p style="margin-top:20px;color:#666;">
+    This portal uses Windows Authentication (Kerberos/Negotiate) and creates a Portnox account for your UPN.
+</p>
