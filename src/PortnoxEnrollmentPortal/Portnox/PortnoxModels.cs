@@ -1,9 +1,14 @@
 namespace PortnoxEnrollmentPortal.Portnox;
 
-// Adjust to match your tenant Swagger schema
 public record CreateAccountRequest(
-    string Email,
-    string? Description = null
+    ClearAccounts[] ClearAccounts
+);
+
+public record ClearAccounts(
+    string? AccountName,
+    string? Description = null,
+    string? CredentialsExpirationDate = null,
+    bool AllowAgentlessDevices = true
 );
 
 public record PortnoxResult(

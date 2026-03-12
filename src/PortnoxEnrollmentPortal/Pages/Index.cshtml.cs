@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using PortnoxEnrollmentPortal.Data;
 using PortnoxEnrollmentPortal.Directory;
-using PortnoxEnrollmentPortal.Models;
 using PortnoxEnrollmentPortal.Portnox;
 
 namespace PortnoxEnrollmentPortal.Pages;
@@ -11,14 +9,12 @@ public class IndexModel : PageModel
 {
     private readonly AdIdentityResolver _resolver;
     private readonly PortnoxClient _portnox;
-    private readonly AppDbContext _db;
     private readonly ILogger<IndexModel> _logger;
 
-    public IndexModel(AdIdentityResolver resolver, PortnoxClient portnox, AppDbContext db, ILogger<IndexModel> logger)
+    public IndexModel(AdIdentityResolver resolver, PortnoxClient portnox, ILogger<IndexModel> logger)
     {
         _resolver = resolver;
         _portnox = portnox;
-        _db = db;
         _logger = logger;
     }
 
@@ -33,31 +29,17 @@ public class IndexModel : PageModel
         StatusMessage = TempData["StatusMessage"]?.ToString() ?? "";
     }
 
-    public async Task<IActionResult> OnPostEnrollAsync(CancellationToken ct)
+    public async Task<IActionResult> OnPostAsync(CancellationToken ct)
     {
         LoadIdentity();
 
         try
         {
-            var resolved = _resolver.ResolveFromHttpUser(DomainSam, User.Identity);
-            var result = await _portnox.CreateAccountAsync(resolved.Upn, resolved.DisplayName, ct);
-
-            _db.Enrollments.Add(new EnrollmentRecord
-            {
-                Upn = resolved.Upn,
-                DomainSam = resolved.DomainSam,
-                Sid = resolved.Sid,
-                AdObjectGuid = resolved.AdObjectGuid,
-                EnrolledAtUtc = DateTime.UtcNow,
-                PortnoxStatusCode = result.StatusCode,
-                PortnoxResponseSnippet = result.BodySnippet
-            });
-
-            await _db.SaveChangesAsync(ct);
+            var result = await _portnox.CreateAccountAsync(Upn, DisplayName, ct);
 
             TempData["StatusMessage"] = result.Success
-                ? $"✅ Enrolled {resolved.Upn} in Portnox. (HTTP {result.StatusCode})"
-                : $"❌ Enrollment failed for {resolved.Upn}. (HTTP {result.StatusCode})";
+                ? $"✅ Enrolled {Upn} in Portnox. (HTTP {result.StatusCode})"
+                : $"❌ Enrollment failed for {Upn}. (HTTP {result.StatusCode})";
 
             return RedirectToPage();
         }
@@ -72,7 +54,7 @@ public class IndexModel : PageModel
     private void LoadIdentity()
     {
         DomainSam = User?.Identity?.Name ?? "UNKNOWN";
-        var resolved = _resolver.ResolveFromHttpUser(DomainSam, User.Identity);
+        var resolved = _resolver.ResolveFromHttpUser(DomainSam);
         Upn = resolved.Upn;
         DisplayName = resolved.DisplayName;
     }

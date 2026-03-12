@@ -2,6 +2,7 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using System.Threading.RateLimiting;
+using Microsoft.Net.Http.Headers;
 
 namespace PortnoxEnrollmentPortal.Portnox;
 
@@ -11,32 +12,26 @@ public class PortnoxClient
     private readonly PortnoxOptions _opt;
     private readonly RateLimiter _limiter;
 
-    public PortnoxClient(HttpClient http, IOptions<PortnoxOptions> opt, RateLimiter limiter)
+    public PortnoxClient(HttpClient http, IOptions<PortnoxOptions> opt)
     {
         _http = http;
         _opt = opt.Value;
-        _limiter = limiter;
 
         _http.Timeout = TimeSpan.FromSeconds(Math.Max(5, _opt.TimeoutSeconds));
     }
 
     public async Task<PortnoxResult> CreateAccountAsync(string upn, string displayName, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(_opt.BaseUrl))
-            throw new InvalidOperationException("Portnox:BaseUrl is required.");
+        if (string.IsNullOrWhiteSpace(_opt.CreateAccountUrl))
+            throw new InvalidOperationException("Portnox:CreateAccountUrl is required.");
 
         if (string.IsNullOrWhiteSpace(_opt.ApiKey))
             throw new InvalidOperationException("Portnox:ApiKey is required (use env var/secret store).");
 
-        using var lease = await _limiter.AcquireAsync(1, ct);
-        if (!lease.IsAcquired)
-            return new PortnoxResult(false, 429, "Local rate limiter denied request.");
-
-        var url = Combine(_opt.BaseUrl, _opt.CreateAccountPath);
+        var url = _opt.CreateAccountUrl;
 
         var payload = new CreateAccountRequest(
-            Email: upn,
-            Description: displayName
+            [new ClearAccounts(upn, displayName)]
         );
 
         var json = JsonSerializer.Serialize(payload);
@@ -44,7 +39,7 @@ public class PortnoxClient
         req.Content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Most Portnox tenants use an apiKey header; adjust if your Swagger says otherwise.
-        req.Headers.Add("apiKey", _opt.ApiKey);
+        req.Headers.Add(HeaderNames.Authorization, $"Bearer {_opt.ApiKey}");
 
         using var resp = await _http.SendAsync(req, ct);
         var body = await resp.Content.ReadAsStringAsync(ct);
