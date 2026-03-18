@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
-using System.Threading.RateLimiting;
 using Microsoft.Net.Http.Headers;
 
 namespace PortnoxEnrollmentPortal.Portnox;
@@ -10,7 +9,6 @@ public class PortnoxClient
 {
     private readonly HttpClient _http;
     private readonly PortnoxOptions _opt;
-    private readonly RateLimiter _limiter;
 
     public PortnoxClient(HttpClient http, IOptions<PortnoxOptions> opt)
     {
@@ -50,12 +48,5 @@ public class PortnoxClient
             return new PortnoxResult(true, (int)resp.StatusCode, snippet);
 
         return new PortnoxResult(resp.IsSuccessStatusCode, (int)resp.StatusCode, snippet);
-    }
-
-    private static string Combine(string baseUrl, string path)
-    {
-        baseUrl = baseUrl.TrimEnd('/');
-        path = "/" + path.TrimStart('/');
-        return baseUrl + path;
     }
 }

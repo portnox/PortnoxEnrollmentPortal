@@ -1,5 +1,4 @@
 using System.DirectoryServices.AccountManagement;
-using System.Security.Principal;
 
 namespace PortnoxEnrollmentPortal.Directory;
 
