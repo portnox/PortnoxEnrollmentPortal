@@ -1,5 +1,4 @@
 using System.DirectoryServices.AccountManagement;
-using System.Security.Principal;
 
 namespace PortnoxEnrollmentPortal.Directory;
 
@@ -13,9 +12,9 @@ public record ResolvedIdentity(
 
 public class AdIdentityResolver
 {
-    public ResolvedIdentity ResolveFromHttpUser(string domainSam, IIdentity? httpIdentity)
+    public ResolvedIdentity ResolveFromHttpUser(string domainSam)
     {
-        var parts = domainSam.Split('\');
+        var parts = domainSam.Split('\\');
         var sam = parts.Length == 2 ? parts[1] : domainSam;
 
         using var ctx = new PrincipalContext(ContextType.Domain);
@@ -28,11 +27,7 @@ public class AdIdentityResolver
         if (string.IsNullOrWhiteSpace(upn))
             throw new InvalidOperationException($"UPN not present for {domainSam}");
 
-        // SID from authenticated principal if possible; fallback to directory principal
-        var sid = (httpIdentity as WindowsIdentity)?.User?.Value
-                  ?? user.Sid?.Value
-                  ?? "";
-
+        var sid = user.Sid?.Value;
         var guid = user.Guid?.ToString("N") ?? "";
 
         return new ResolvedIdentity(

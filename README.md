@@ -4,7 +4,7 @@ Centralized internal web portal that uses Windows Authentication (Kerberos/Negot
 
 ## Prereqs
 - Windows Server (domain-joined)
-- IIS installed + ASP.NET Core Hosting Bundle (for .NET 8)
+- ASP.NET Core Runtime (for .NET 10)
 - Portnox Cloud tenant API token
 
 ## Configure IIS
@@ -20,31 +20,18 @@ Set the API key securely (recommended: environment variable) and do **not** comm
 
 ### appsettings.json
 Update:
-- `Portnox:BaseUrl`
-- `Portnox:CreateAccountPath` (copy from your tenant Swagger: Help -> API Reference)
-- Adjust the request payload in `src/PortnoxEnrollmentPortal/Portnox/PortnoxModels.cs` to match your tenant schema.
+- `Portnox:CreateAccountUrl` (copy from your tenant Swagger: Help -> API Reference)
+- `ApiKey` (Tenant API Key)
 
 ## Secrets
 Recommended:
-- Set `Portnox__ApiKey` as an environment variable on the IIS server.
+- Set `Portnox__ApiKey` as an environment variable on the IIS server if you don't want to set it in appsettings.json.
 
 ### PowerShell
 ```powershell
 setx Portnox__ApiKey "YOUR_TOKEN_VALUE" /M
 ```
 Restart IIS after setting.
-
-## Run locally (dev)
-```powershell
-cd src\PortnoxEnrollmentPortal
-# Install EF tools if needed
- dotnet tool update --global dotnet-ef
-# Create database
- dotnet ef migrations add InitialCreate
- dotnet ef database update
-# Run
- dotnet run
-```
 
 ## Deploy
 Publish:
